@@ -1,11 +1,12 @@
-class Validation {
+export class EZValidationAPI {
   hasError: boolean = false;
 
-  constructor(public validating: any, public errorMessage?: string) {}
+  constructor(public validating: any, public errorMessage?: string, public errorMessages: string[] = []) { }
 
   _returnError(errorMessage: string) {
     this.hasError = true;
     this.errorMessage = this.errorMessage || errorMessage;
+    this.errorMessages.push(errorMessage)
   }
 
   required(errorMessage: string = "This is required") {
@@ -97,8 +98,8 @@ class Validation {
 
   isPhoneNumber(errorMessage: string = "Must be valid Phone Number") {
     if (
-      this.validating.match(
-        /^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/im
+      String(this.validating).match(
+        /^(1\s?)?((\([0-9]{3}\))|[0-9]{3})[\s\-]?[\0-9]{3}[\s\-]?[0-9]{4}$/gm
       ) === null
     ) {
       this._returnError(errorMessage);
@@ -173,9 +174,13 @@ class Validation {
     return this;
   }
 
-  customValidation(cb: (validating: any) => boolean, errorMessage: string) {
-    if (!cb(this.validating)) {
+  customValidation(cb: (validating: any) => boolean | string, errorMessage?: string) {
+    const cbOutput = cb(this.validating)
+
+    if (!cbOutput && errorMessage) {
       this._returnError(errorMessage);
+    } else if (typeof (cbOutput) === "string") {
+      this._returnError(cbOutput)
     }
 
     return this;
@@ -183,5 +188,5 @@ class Validation {
 }
 
 export const EzValidation = (val: any, defaultErrorMessage?: string) => {
-  return new Validation(val, defaultErrorMessage);
+  return new EZValidationAPI(val, defaultErrorMessage);
 };

@@ -1,6 +1,27 @@
-import { EzValidation } from "../src/EzValidation";
+import { EzValidation, EZValidationAPI } from "../src/EzValidation";
+
+class CustomValidations extends EZValidationAPI {
+  customMethod() {
+    if (this.validating == 0) {
+      this._returnError("value can't be 0");
+    }
+    return this;
+  }
+}
 
 describe("util/ezValidationTest", () => {
+  it("returns error messages if there are multiple errors", () => {
+    const validation = EzValidation('3').isNumber().isString().isBoolean().isEmail().required().errorMessages
+
+    expect(validation.length).toEqual(3)
+  })
+
+  it("testing custom validation", () => {
+    const validation = new CustomValidations(0).customMethod().errorMessage
+
+    expect(validation).toEqual("value can't be 0")
+  })
+
   it("returns if EzValidation is a class", () => {
     const validation = EzValidation("test");
     expect(typeof validation).toEqual("object");
@@ -137,6 +158,8 @@ describe("util/ezValidationTest", () => {
     const validation2 = EzValidation("770-2342342").isPhoneNumber()
       .errorMessage;
     expect(validation2).toEqual(undefined);
+    const validation3 = EzValidation(5555555559).isPhoneNumber().errorMessage
+    expect(validation3).toEqual(undefined)
   });
 
   it("returns negative type isPHONENUMBER checks", () => {
@@ -144,6 +167,8 @@ describe("util/ezValidationTest", () => {
     expect(validation).toEqual(true);
     const validation2 = EzValidation("7702-3-42342").isPhoneNumber().hasError;
     expect(validation2).toEqual(true);
+    const validation3 = EzValidation("234567890123").isPhoneNumber().hasError;
+    expect(validation3).toEqual(true);
   });
 
   it("returns positive type isUSAZipCode checks", () => {
@@ -212,7 +237,7 @@ describe("util/ezValidationTest", () => {
     expect(validation).toEqual(true);
   });
 
-  it("returns postive custom regex", () => {
+  it("returns positive custom regex", () => {
     const validation = EzValidation("hi").customRegex("hi").errorMessage;
     expect(validation).toEqual(undefined);
   });
@@ -222,9 +247,9 @@ describe("util/ezValidationTest", () => {
     expect(validation).toEqual(true);
   });
 
-  it("returns postive custom validation", () => {
+  it("returns positive custom validation", () => {
     const validation = EzValidation("hi").customValidation(
-      val => val === "hi",
+      (val: string) => val === "hi",
       "val is not hi"
     ).errorMessage;
     expect(validation).toEqual(undefined);
@@ -232,9 +257,18 @@ describe("util/ezValidationTest", () => {
 
   it("returns negative custom validation", () => {
     const validation = EzValidation("hi").customValidation(
-      val => val !== "hi",
+      (val: string) => val !== "hi",
       "val is not hi"
     ).hasError;
     expect(validation).toEqual(true);
+  });
+
+  it("user can return string in customValidation, and string displays", () => {
+    const errMsg = "this is an error";
+    const validation = EzValidation("hi").customValidation(
+      (val: string) => val === "hi" ? errMsg : false
+    ).errorMessage;
+
+    expect(validation).toEqual(errMsg);
   });
 });
